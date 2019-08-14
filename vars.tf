@@ -41,7 +41,7 @@ variable "network_name" {
 
 variable "existing_volumes" {
   description = "List of existing volumes to attach to instance"
-  type        = "list"
+  type        = list(string)
   default     = []
 }
 
