@@ -3,6 +3,14 @@ terraform {
   backend "s3" {}
 }
 
+provider "ansible" {
+  version = "~>1.0"
+}
+
+provider "openstack" {
+  version = "~>2.0"
+}
+
 resource "openstack_networking_floatingip_v2" "fip" {
   pool = "${var.floatingip_pool}"
 }
@@ -73,7 +81,7 @@ resource "ansible_host" "hub" {
   inventory_hostname = "${var.environment_name}.${var.domain_name}"
   groups             = ["hub", "hub-dev"]
 
-  vars {
+  vars = {
     ansible_user = "ptty2u"
 
     ansible_host            = "${openstack_networking_floatingip_v2.fip.address}"
