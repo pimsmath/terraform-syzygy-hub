@@ -71,18 +71,18 @@ resource "ansible_group" "hub" {
   inventory_group_name = "hub"
 }
 
-resource "ansible_group" "hub-dev" {
-  inventory_group_name = "hub-dev"
+resource "ansible_group" "hub_dev" {
+  inventory_group_name = "hub_dev"
 }
 
 resource "ansible_group" "jupyter" {
   inventory_group_name = "jupyter"
-  children             = ["hub", "hub-dev"]
+  children             = ["hub", "hub_dev"]
 }
 
 resource "ansible_host" "hub" {
   inventory_hostname = "${var.environment_name}.${var.domain_name}"
-  groups             = ["hub", "hub-dev"]
+  groups             = ["hub", "hub_dev"]
 
   vars = {
     ansible_user            = "ptty2u"
