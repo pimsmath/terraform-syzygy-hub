@@ -5,11 +5,11 @@ terraform {
   required_providers {
     ansible = {
       source = "nbering/ansible"
-      verison = "~>1.0"
+      version = "~>1.0"
     }
     openstack = {
       source = "terraform-provider-openstack/openstack"
-      verison = "~>1.32"
+      version = "~>1.32"
     }
   }
 }
