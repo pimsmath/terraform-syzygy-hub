@@ -11,7 +11,7 @@ variable "domain_name" {
 
 variable "block_device_source_id" {
   description = "UUID to create VM backing store from (typically a glance image ID)"
-  default     = "3330f3a3-e52b-4f7d-80a8-57233c9259e7"
+  default     = "b8a8ec4b-e6f8-4e68-83f3-7554efe66700"
 }
 
 variable "block_device_type" {
