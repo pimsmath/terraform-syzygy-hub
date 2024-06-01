@@ -9,7 +9,7 @@ terraform {
     }
     openstack = {
       source = "terraform-provider-openstack/openstack"
-      version = "~>1.49"
+      version = "~> 1.53.0"
     }
   }
 }
@@ -51,12 +51,12 @@ resource "openstack_compute_instance_v2" "hub" {
 # or if new ones were created.
 locals {
   vol_id_1 = length(var.existing_volumes) == 0 ? element(
-    concat(openstack_blockstorage_volume_v2.homedir.*.id, [""]),
+    concat(openstack_blockstorage_volume_v3.homedir.*.id, [""]),
     0,
   ) : element(concat(var.existing_volumes, [""]), 0)
 }
 
-resource "openstack_blockstorage_volume_v2" "homedir" {
+resource "openstack_blockstorage_volume_v3" "homedir" {
   count = length(var.existing_volumes) == 0 ? 1 : 0
   name  = format("%s-homedir-%02d", var.environment_name, count.index + 1)
   size  = var.vol_homedir_size
