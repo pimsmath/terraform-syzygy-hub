@@ -31,7 +31,7 @@ variable "key_name" {
 
 variable "security_group_name" {
   description = "Security group to assign to this host"
-  default     = "syzygy-ingress-egress"
+  default     = "syzygy"
 }
 
 variable "network_name" {
