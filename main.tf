@@ -9,9 +9,9 @@ resource "openstack_networking_floatingip_v2" "fip" {
   pool = var.floatingip_pool
 }
 
-resource "openstack_compute_floatingip_associate_v2" "fip" {
-  instance_id = openstack_compute_instance_v2.hub.id
+resource "openstack_networking_floatingip_associate_v2" "fip" {
   floating_ip = openstack_networking_floatingip_v2.fip.address
+  port_id     = openstack_compute_instance_v2.hub.network[0].port
 }
 
 # ── Compute instance ───────────────────────────────────────────────────────────
