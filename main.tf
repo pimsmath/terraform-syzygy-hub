@@ -3,15 +3,23 @@ data "openstack_images_image_v2" "hub" {
   most_recent = true
 }
 
+data "openstack_networking_network_v2" "hub" {
+  name = var.network_name
+}
+
 # ── Floating IP ────────────────────────────────────────────────────────────────
 
 resource "openstack_networking_floatingip_v2" "fip" {
   pool = var.floatingip_pool
 }
 
+resource "openstack_networking_port_v2" "hub" {
+  network_id = data.openstack_networking_network_v2.hub.id
+}
+
 resource "openstack_networking_floatingip_associate_v2" "fip" {
   floating_ip = openstack_networking_floatingip_v2.fip.address
-  port_id     = openstack_compute_instance_v2.hub.network[0].port
+  port_id     = openstack_networking_port_v2.hub.id
 }
 
 # ── Compute instance ───────────────────────────────────────────────────────────
@@ -33,7 +41,7 @@ resource "openstack_compute_instance_v2" "hub" {
   }
 
   network {
-    name = var.network_name
+    port = openstack_networking_port_v2.hub.id
   }
 }
 
