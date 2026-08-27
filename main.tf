@@ -1,18 +1,9 @@
-terraform {
-  # The configuration for this backend will be filled in by Terragrunt
-  backend "s3" {
-  }
-  required_providers {
-    ansible = {
-      source = "nbering/ansible"
-      version = "~>1.0"
-    }
-    openstack = {
-      source = "terraform-provider-openstack/openstack"
-      version = "~> 1.53.0"
-    }
-  }
+data "openstack_images_image_v2" "hub" {
+  name        = var.image_name
+  most_recent = true
 }
+
+# ── Floating IP ────────────────────────────────────────────────────────────────
 
 resource "openstack_networking_floatingip_v2" "fip" {
   pool = var.floatingip_pool
@@ -23,6 +14,8 @@ resource "openstack_compute_floatingip_associate_v2" "fip" {
   floating_ip = openstack_networking_floatingip_v2.fip.address
 }
 
+# ── Compute instance ───────────────────────────────────────────────────────────
+
 resource "openstack_compute_instance_v2" "hub" {
   name            = var.environment_name
   flavor_name     = var.flavor_name
@@ -30,15 +23,12 @@ resource "openstack_compute_instance_v2" "hub" {
   security_groups = [var.security_group_name]
   user_data       = local.cloudconfig
 
-  # Keep the root disk on a volume
   block_device {
-    uuid             = var.block_device_source_id
-    source_type      = var.block_device_type
-    volume_size      = 30
-    boot_index       = 0
-    destination_type = "volume"
-
-    # This is messy but necessary because of how we resize
+    uuid                  = data.openstack_images_image_v2.hub.id
+    source_type           = "image"
+    destination_type      = "volume"
+    volume_size           = var.boot_volume_size_gb
+    boot_index            = 0
     delete_on_termination = false
   }
 
@@ -47,13 +37,12 @@ resource "openstack_compute_instance_v2" "hub" {
   }
 }
 
-# Determine the volume UUIDs, whether if existing ones were supplied
-# or if new ones were created.
+# ── Homedir volume ─────────────────────────────────────────────────────────────
+
 locals {
-  vol_id_1 = length(var.existing_volumes) == 0 ? element(
-    concat(openstack_blockstorage_volume_v3.homedir.*.id, [""]),
-    0,
-  ) : element(concat(var.existing_volumes, [""]), 0)
+  homedir_volume_id = length(var.existing_volumes) == 0 ? (
+    openstack_blockstorage_volume_v3.homedir[0].id
+  ) : var.existing_volumes[0]
 }
 
 resource "openstack_blockstorage_volume_v3" "homedir" {
@@ -62,10 +51,12 @@ resource "openstack_blockstorage_volume_v3" "homedir" {
   size  = var.vol_homedir_size
 }
 
-resource "openstack_compute_volume_attach_v2" "homedir_1" {
+resource "openstack_compute_volume_attach_v2" "homedir" {
   instance_id = openstack_compute_instance_v2.hub.id
-  volume_id   = local.vol_id_1
+  volume_id   = local.homedir_volume_id
 }
+
+# ── Ansible inventory ──────────────────────────────────────────────────────────
 
 resource "ansible_group" "hub" {
   inventory_group_name = "hub"
@@ -85,11 +76,11 @@ resource "ansible_host" "hub" {
   groups             = ["hub", "hub_dev"]
 
   vars = {
-    ansible_user            = "ptty2u"
+    ansible_user            = var.ansible_user
     ansible_host            = openstack_networking_floatingip_v2.fip.address
     ansible_ssh_common_args = "-C -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
     syzygy_homedir_id = "/dev/disk/by-id/virtio-${substr(
-      openstack_compute_volume_attach_v2.homedir_1.volume_id,
+      openstack_compute_volume_attach_v2.homedir.volume_id,
       0,
       20,
     )}"
