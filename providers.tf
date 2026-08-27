@@ -1,4 +1,9 @@
 terraform {
+
+  # The configuration for this backend will be filled in by terragrunt
+  backend "s3" {
+  }
+
   required_providers {
     openstack = {
       source  = "terraform-provider-openstack/openstack"
