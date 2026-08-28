@@ -7,6 +7,10 @@ data "openstack_networking_network_v2" "hub" {
   name = var.network_name
 }
 
+data "openstack_networking_secgroup_v2" "hub" {
+  name = var.security_group_name
+}
+
 # ── Floating IP ────────────────────────────────────────────────────────────────
 
 resource "openstack_networking_floatingip_v2" "fip" {
@@ -14,7 +18,8 @@ resource "openstack_networking_floatingip_v2" "fip" {
 }
 
 resource "openstack_networking_port_v2" "hub" {
-  network_id = data.openstack_networking_network_v2.hub.id
+  network_id         = data.openstack_networking_network_v2.hub.id
+  security_group_ids = [data.openstack_networking_secgroup_v2.hub.id]
 }
 
 resource "openstack_networking_floatingip_associate_v2" "fip" {
@@ -27,9 +32,8 @@ resource "openstack_networking_floatingip_associate_v2" "fip" {
 resource "openstack_compute_instance_v2" "hub" {
   name            = var.environment_name
   flavor_name     = var.flavor_name
-  key_pair        = var.key_name
-  security_groups = [var.security_group_name]
-  user_data       = local.cloudconfig
+  key_pair  = var.key_name
+  user_data = local.cloudconfig
 
   block_device {
     uuid                  = data.openstack_images_image_v2.hub.id
